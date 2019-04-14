@@ -1,4 +1,5 @@
 #include <bits/stdc++.h>
+#include <unistd.h>
 using namespace std;
 
 #define MAXN 412
@@ -227,7 +228,7 @@ vector<pair<double, double>> tabu_search(chrono::nanoseconds max_duration, chron
             last_improvement = chrono::high_resolution_clock::now();
 
             results.push_back(pair<double, double> (chrono::duration_cast<chrono::duration<double>>(chrono::high_resolution_clock::now() - start_time).count(), best_sol_value));
-            cout << " " << iteration << ", " << chrono::duration_cast<chrono::duration<double>>(chrono::high_resolution_clock::now() - start_time).count() << ", " << best_sol_value << ", " << infeasible_penalty << endl;
+            // cout << " " << iteration << ", " << chrono::duration_cast<chrono::duration<double>>(chrono::high_resolution_clock::now() - start_time).count() << ", " << best_sol_value << ", " << infeasible_penalty << endl;
         }
 
         if (strategic_oscillation)
@@ -254,9 +255,99 @@ vector<pair<double, double>> tabu_search(chrono::nanoseconds max_duration, chron
     return results;
 }
 
+void experiment(string out_file, chrono::nanoseconds max_duration, chrono::nanoseconds no_improvement_duration, int tabu_tenure, bool first_improving, bool strategic_oscillation, bool use_removal_factor)
+{
+    srand(rand());
+    vector<vector<pair<double, double>>> results;
+    vector<int> j;
+    for (int i = 0; i < 20; i++)
+    {
+        results.push_back(tabu_search(max_duration, no_improvement_duration, tabu_tenure, first_improving, strategic_oscillation, use_removal_factor));
+        j.push_back(0);
+    }
+
+    vector<pair<double, double>> agg;
+    while (true)
+    {
+        int choice = -1;
+        for (int i = 0; i < results.size(); i++)
+            if (j[i] + 1 < results[i].size() && (choice == -1 || results[i][j[i] + 1].first < results[choice][j[choice] + 1].first))
+                choice = i;
+        
+        if (choice == -1)
+            break;
+        
+        j[choice]++;
+
+        double y = 0;
+        for (int i = 0; i < results.size(); i++)
+            y += results[i][j[i]].second;
+        
+        y /= results.size();
+        agg.push_back(pair<double, double> (results[choice][j[choice]].first, y));
+    }
+
+    ofstream out;
+    out.open (out_file + ".csv");
+    for (int i = 0; i < agg.size(); i++)
+    {
+        out << agg[i].first << "," << agg[i].second << endl;
+    }
+
+    out.close();
+
+    out.open (out_file + ".sol");
+
+    double miny = inf, maxy = -inf;
+    for (int i = 0; i < results.size(); i++)
+    {
+        miny = min(miny, results[i].back().second);
+        maxy = max(maxy, results[i].back().second);
+    }
+
+    out << miny << " " << agg.back().second << " " << maxy;
+
+    out.close();
+}
+
 int main(void)
 {
     srand(20);
     read_input("pacote_atividade4/TS_Framework/instances/qbf400");
-    tabu_search(chrono::nanoseconds(30ll * 60ll * 1000000000ll), chrono::nanoseconds(60ll * 1000000000ll), ceil(n / 8.0), false, false, false);
+    int t = fork();
+    if (t == 0)
+    {
+        experiment("exp1", chrono::nanoseconds(30ll * 60ll * 1000000000ll), chrono::nanoseconds(60ll * 1000000000ll), ceil(n / 8.0), false, false, false);
+        return 0;
+    }
+
+    t = fork();
+    if (t == 0)
+    {
+        experiment("exp2", chrono::nanoseconds(30ll * 60ll * 1000000000ll), chrono::nanoseconds(60ll * 1000000000ll), ceil(n / 8.0), true, false, false);
+        return 0;
+    }
+    
+    t = fork();
+    if (t == 0)
+    {
+        experiment("exp3", chrono::nanoseconds(30ll * 60ll * 1000000000ll), chrono::nanoseconds(60ll * 1000000000ll), ceil(n / 16.0), false, false, false);
+        return 0;
+    }
+
+    t = fork();
+    if (t == 0)
+    {
+        experiment("exp4", chrono::nanoseconds(30ll * 60ll * 1000000000ll), chrono::nanoseconds(60ll * 1000000000ll), ceil(n / 8.0), false, true, false);
+        return 0;
+    }
+
+    t = fork();
+    if (t == 0)
+    {
+        experiment("exp5", chrono::nanoseconds(30ll * 60ll * 1000000000ll), chrono::nanoseconds(60ll * 1000000000ll), ceil(n / 8.0), false, false, true);
+        return 0;
+    }
+
+    while(1);
 }
