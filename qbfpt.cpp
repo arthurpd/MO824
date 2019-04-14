@@ -159,6 +159,15 @@ void neightborhood_move(bool first_improving)
         // Non-tabu move or aspiration criteria (aspiration criteria only triggers for feasible solution).
         if (tabu_tab[i] == 0 || (sol_value + delta[i] > best_sol_value && sol_violated_triples + pt_tab[i] == 0))
         {
+            if (sol_value + delta[i] > best_sol_value && sol_violated_triples + pt_tab[i] == 0)
+            {
+                // If we hit the aspiration criteria, don't miss the opportunity.
+                max_surrogate_delta = delta[i] - infeasible_penalty * pt_tab[i] + removal_factor * sol[i];
+                best_cand_delta = delta[i];
+                best_cand = i;
+                break;
+            }
+
             if (delta[i] - infeasible_penalty * pt_tab[i] + removal_factor * sol[i] > max_surrogate_delta)
             {
                 max_surrogate_delta = delta[i] - infeasible_penalty * pt_tab[i] + removal_factor * sol[i];
@@ -181,7 +190,7 @@ void neightborhood_move(bool first_improving)
     }
 }
 
-void tabu_search(chrono::nanoseconds max_duration, chrono::nanoseconds no_improvement_duration, int tabu_tenure, bool first_improving, bool strategic_oscillation, bool use_removal_factor)
+vector<pair<double, double>> tabu_search(chrono::nanoseconds max_duration, chrono::nanoseconds no_improvement_duration, int tabu_tenure, bool first_improving, bool strategic_oscillation, bool use_removal_factor)
 {
     removal_factor = 0.0;
     infeasible_penalty = strategic_oscillation ? 100.0 : 2.0 * inf;
@@ -204,6 +213,7 @@ void tabu_search(chrono::nanoseconds max_duration, chrono::nanoseconds no_improv
     for (int i = 0; i < n; i++)
         pi.push_back(i);
 
+    vector<pair<double, double>> results;
     auto start_time = chrono::high_resolution_clock::now();
     auto last_improvement = chrono::high_resolution_clock::now();
     for (iteration = 0; chrono::high_resolution_clock::now() - last_improvement < no_improvement_duration && chrono::high_resolution_clock::now() - start_time < max_duration; iteration++)
@@ -216,6 +226,7 @@ void tabu_search(chrono::nanoseconds max_duration, chrono::nanoseconds no_improv
             best_sol_value = sol_value;
             last_improvement = chrono::high_resolution_clock::now();
 
+            results.push_back(pair<double, double> (chrono::duration_cast<chrono::duration<double>>(chrono::high_resolution_clock::now() - start_time).count(), best_sol_value));
             cout << " " << iteration << ", " << chrono::duration_cast<chrono::duration<double>>(chrono::high_resolution_clock::now() - start_time).count() << ", " << best_sol_value << ", " << infeasible_penalty << endl;
         }
 
@@ -237,12 +248,15 @@ void tabu_search(chrono::nanoseconds max_duration, chrono::nanoseconds no_improv
         }
     }
 
+    results.push_back(pair<double, double> (chrono::duration_cast<chrono::duration<double>>(chrono::high_resolution_clock::now() - start_time).count(), best_sol_value));
     cout << " " << iteration << ", " << chrono::duration_cast<chrono::duration<double>>(chrono::high_resolution_clock::now() - start_time).count() << ", " << best_sol_value << ", " << infeasible_penalty << endl;
+
+    return results;
 }
 
 int main(void)
 {
-    srand(0);
+    srand(20);
     read_input("pacote_atividade4/TS_Framework/instances/qbf400");
-    tabu_search(chrono::nanoseconds(30ll * 60ll * 1000000000ll), chrono::nanoseconds(60ll * 1000000000ll), ceil(n / 8.0), false, true, false);
+    tabu_search(chrono::nanoseconds(30ll * 60ll * 1000000000ll), chrono::nanoseconds(60ll * 1000000000ll), ceil(n / 8.0), false, false, false);
 }
