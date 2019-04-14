@@ -9,10 +9,10 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${fileBasenameNoExtension}.out",
-            "args": [
-                "<",
-                "${fileBasenameNoExtension}.in"
-            ],
+            // "args": [
+            //     "<",
+            //     "${fileBasenameNoExtension}.in"
+            // ],
             "cwd": "./",
             "stopAtEntry": false,
             "environment": [],
