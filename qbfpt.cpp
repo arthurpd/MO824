@@ -310,44 +310,32 @@ void experiment(string out_file, chrono::nanoseconds max_duration, chrono::nanos
     out.close();
 }
 
-int main(void)
+void ttt_experiment(string out_file, chrono::nanoseconds max_duration, chrono::nanoseconds no_improvement_duration, int tabu_tenure, bool first_improving, bool strategic_oscillation, bool use_removal_factor)
 {
-    srand(20);
+    vector<pair<double, double>> results = tabu_search(max_duration, no_improvement_duration, tabu_tenure, first_improving, strategic_oscillation, use_removal_factor);
+
+    ofstream out;
+    out.open (out_file + ".csv");
+    for (int i = 0; i < results.size(); i++)
+    {
+        out << results[i].first << "," << results[i].second << endl;
+    }
+
+    out.close();
+}
+
+
+int main(int argc, char **argv)
+{
+    assert(argc == 2);
+    int out_idx = atol(argv[1]);
+    assert(out_idx > 0);
+    srand(out_idx);
+
     read_input("pacote_atividade4/TS_Framework/instances/qbf400");
-    int t = fork();
-    if (t == 0)
-    {
-        experiment("exp1", chrono::nanoseconds(30ll * 60ll * 1000000000ll), chrono::nanoseconds(60ll * 1000000000ll), ceil(n / 8.0), false, false, false);
-        return 0;
-    }
 
-    t = fork();
-    if (t == 0)
-    {
-        experiment("exp2", chrono::nanoseconds(30ll * 60ll * 1000000000ll), chrono::nanoseconds(60ll * 1000000000ll), ceil(n / 8.0), true, false, false);
-        return 0;
-    }
-    
-    t = fork();
-    if (t == 0)
-    {
-        experiment("exp3", chrono::nanoseconds(30ll * 60ll * 1000000000ll), chrono::nanoseconds(60ll * 1000000000ll), ceil(n / 16.0), false, false, false);
-        return 0;
-    }
-
-    t = fork();
-    if (t == 0)
-    {
-        experiment("exp4", chrono::nanoseconds(30ll * 60ll * 1000000000ll), chrono::nanoseconds(60ll * 1000000000ll), ceil(n / 8.0), false, true, false);
-        return 0;
-    }
-
-    t = fork();
-    if (t == 0)
-    {
-        experiment("exp5", chrono::nanoseconds(30ll * 60ll * 1000000000ll), chrono::nanoseconds(60ll * 1000000000ll), ceil(n / 8.0), false, false, true);
-        return 0;
-    }
-
-    while(1);
+    char s[100];
+    sprintf(s, "ttt_data/%d", out_idx);
+    ttt_experiment(s, chrono::nanoseconds(5ll * 60ll * 1000000000ll), chrono::nanoseconds(5ll * 60ll * 1000000000ll), ceil(n / 8.0), false, true, false);
+    return 0;
 }
